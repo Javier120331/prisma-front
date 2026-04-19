@@ -27,11 +27,13 @@ const TopNav = ({ title = 'Aula Orgánica' }) => {
   return (
     <header className="fixed top-0 left-0 right-0 z-40 h-16 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl shadow-sm shadow-stone-200/50 dark:shadow-stone-900/20 md:pl-72">
       <div className="flex justify-between items-center px-6 md:px-10 h-full w-full">
-        {/* Title - Mobile only */}
+        {/* Logo - Mobile only */}
         <div className="md:hidden">
-          <h1 className="font-headline font-bold text-lg text-lime-900 dark:text-lime-100 tracking-tight">
-            {title}
-          </h1>
+          <img 
+            src="/logos/prisma_logo.png" 
+            alt="P.R.I.S.M.A. Logo" 
+            className="h-8 w-8"
+          />
         </div>
 
         {/* Right Section - Notifications, Settings, Profile */}

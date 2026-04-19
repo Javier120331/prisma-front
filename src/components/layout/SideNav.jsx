@@ -28,12 +28,14 @@ const SideNav = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center shadow-md">
-              <span className="material-symbols-outlined text-white text-2xl">eco</span>
-            </div>
+            <img 
+              src="/logos/prisma_logo.png" 
+              alt="P.R.I.S.M.A. Logo" 
+              className="w-12 h-12 rounded-lg shadow-md"
+            />
             <div>
-              <h1 className="font-headline text-xl font-bold text-stone-900 dark:text-stone-100">Aula Orgánica</h1>
-              <p className="text-xs text-stone-500 font-medium tracking-wide uppercase">Editorial Landscape</p>
+              <h1 className="font-headline text-xl font-bold text-stone-900 dark:text-stone-100">P.R.I.S.M.A.</h1>
+              <p className="text-xs text-stone-500 font-medium tracking-wide uppercase">Modelo Agéntico</p>
             </div>
           </div>
         </div>

@@ -97,6 +97,15 @@ const LoginPage = () => {
       {/* Right Side: Login Panel */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-surface">
         <div className="w-full max-w-md">
+          {/* Logo */}
+          <div className="text-center mb-8">
+            <img 
+              src="/logos/prisma_gif_logo.gif" 
+              alt="P.R.I.S.M.A. Logo" 
+              className="w-20 h-20 mx-auto"
+            />
+          </div>
+
           {/* Mobile Brand Header */}
           <div className="lg:hidden text-center mb-12">
             <h2 className="font-headline font-bold text-3xl text-primary tracking-tight">P.R.I.S.M.A.</h2>
