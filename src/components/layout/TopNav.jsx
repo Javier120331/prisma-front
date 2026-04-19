@@ -4,12 +4,25 @@
  */
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../ui/Button';
 
 const TopNav = ({ title = 'Aula Orgánica' }) => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+    setIsProfileOpen(false);
+  };
+
+  const handleProfileClick = () => {
+    navigate('/profile');
+    setIsProfileOpen(false);
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 h-16 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl shadow-sm shadow-stone-200/50 dark:shadow-stone-900/20 md:pl-72">
@@ -55,7 +68,10 @@ const TopNav = ({ title = 'Aula Orgánica' }) => {
                   <p className="text-sm font-medium text-on-surface">{user?.nombre || 'Usuario'}</p>
                   <p className="text-xs text-on-surface-variant">{user?.email || 'usuario@ejemplo.com'}</p>
                 </div>
-                <button className="w-full text-left px-4 py-2 hover:bg-surface-container-low transition-colors text-sm text-on-surface flex items-center gap-2">
+                <button
+                  onClick={handleProfileClick}
+                  className="w-full text-left px-4 py-2 hover:bg-surface-container-low transition-colors text-sm text-on-surface flex items-center gap-2"
+                >
                   <span className="material-symbols-outlined text-sm">person</span>
                   Mi Perfil
                 </button>
@@ -65,10 +81,7 @@ const TopNav = ({ title = 'Aula Orgánica' }) => {
                 </button>
                 <div className="border-t border-outline-variant/15"></div>
                 <button
-                  onClick={() => {
-                    logout();
-                    setIsProfileOpen(false);
-                  }}
+                  onClick={handleLogout}
                   className="w-full text-left px-4 py-2 hover:bg-error/10 transition-colors text-sm text-error flex items-center gap-2"
                 >
                   <span className="material-symbols-outlined text-sm">logout</span>

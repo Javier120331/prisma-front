@@ -68,8 +68,8 @@ const LoginPage = () => {
 
         {/* Content */}
         <div className="relative z-10">
-          <h2 className="font-headline font-bold text-3xl text-primary tracking-tight mb-2">Aula Orgánica</h2>
-          <p className="text-on-surface-variant italic text-lg">Editorial Landscape</p>
+          <h2 className="font-headline font-bold text-3xl text-primary tracking-tight mb-2">P.R.I.S.M.A.</h2>
+          <p className="text-on-surface-variant italic text-lg">Modelo Agéntico con 4 IAs</p>
         </div>
 
         <div className="relative z-10 max-w-lg mt-auto mb-32">
@@ -83,14 +83,14 @@ const LoginPage = () => {
           <div className="flex items-center space-x-4 bg-surface-container-lowest/60 backdrop-blur-md p-6 rounded-xl border border-outline-variant/15 w-max">
             <span className="material-symbols-outlined text-primary text-3xl fill-icon">eco</span>
             <div>
-              <p className="font-body font-medium text-on-surface">Sistema PACI Chileno</p>
-              <p className="font-body text-sm text-on-surface-variant">Alineado al Ministerio de Educación</p>
+              <p className="font-body font-medium text-on-surface">Compatible con Formulario PACI</p>
+              <p className="font-body text-sm text-on-surface-variant">Alineado al Decreto 83 del Ministerio de Educación</p>
             </div>
           </div>
         </div>
 
         <div className="relative z-10 text-sm text-on-surface-variant">
-          © 2024 Aula Orgánica. Diseño para educadores de Chile.
+          © 2026 P.R.I.S.M.A Team. Diseño para educadores de Chile. Todos los derechos reservados
         </div>
       </div>
 
@@ -99,8 +99,8 @@ const LoginPage = () => {
         <div className="w-full max-w-md">
           {/* Mobile Brand Header */}
           <div className="lg:hidden text-center mb-12">
-            <h2 className="font-headline font-bold text-3xl text-primary tracking-tight">Aula Orgánica</h2>
-            <p className="text-on-surface-variant italic mt-2">Cultivando el aprendizaje</p>
+            <h2 className="font-headline font-bold text-3xl text-primary tracking-tight">P.R.I.S.M.A.</h2>
+            <p className="text-on-surface-variant italic mt-2">Modelo Agéntico con 4 IAs</p>
           </div>
 
           {/* Login Card */}

@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 // Páginas
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import ProfilePage from './pages/ProfilePage';
 import PACIPage from './pages/PACIPage';
 import AjustadorPage from './pages/AjustadorPage';
 
@@ -54,6 +55,14 @@ const AppContent = () => {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
           </ProtectedRoute>
         }
       />
