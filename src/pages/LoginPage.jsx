@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Input, Button, Alert, Spinner } from '../components';
+import authService from '../services/authService';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -47,19 +48,9 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      // TODO: Llamar a API de login
-      // const response = await authService.login(email, password);
-      // login(response.user, response.tokens);
-      // navigate('/dashboard');
-      
-      // Por ahora, login simulado
-      setTimeout(() => {
-        login(
-          { id: '1', email, nombre: email.split('@')[0] },
-          { access_token: 'mock-token', refresh_token: 'mock-refresh' }
-        );
-        navigate('/dashboard');
-      }, 1500);
+      const response = await authService.login(email, password);
+      login(response.user, response.tokens);
+      navigate('/dashboard');
     } catch (error) {
       setApiError(error.message || 'Error al iniciar sesión. Intenta nuevamente.');
     } finally {
