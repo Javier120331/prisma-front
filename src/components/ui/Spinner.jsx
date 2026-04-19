@@ -21,7 +21,7 @@ const Spinner = ({
     primary: 'border-primary',
     secondary: 'border-secondary',
     tertiary: 'border-tertiary',
-    on-surface: 'border-on-surface',
+    'on-surface': 'border-on-surface',
   };
 
   return (
