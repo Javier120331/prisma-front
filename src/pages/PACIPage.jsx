@@ -1,12 +1,14 @@
 /**
  * PACIPage
  * Página de formulario PACI (Plan de Adaptación Curricular Individualizado)
+ * Protege datos sensibles de menores: muestra iniciales + nivel
  */
 
 import { useState, useEffect } from 'react';
 import MainContainer from '../components/layout/MainContainer';
-import { Card, Button, Input, Alert, Badge } from '../components/ui';
+import { Card, Button, Input, Alert, Badge, Avatar } from '../components/ui';
 import { FormSection, StudentSelector } from '../components/form';
+import { anonymizeName } from '../utils/privacyUtils';
 
 const PACIPage = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -19,10 +21,10 @@ const PACIPage = () => {
     evaluacion: '',
   });
   const [students, setStudents] = useState([
-    { id: 1, name: 'Pablo Rodríguez', nee: 'Dislexia', lastUpdated: '2025-04-15' },
-    { id: 2, name: 'María García', nee: 'Discalculia', lastUpdated: '2025-04-14' },
-    { id: 3, name: 'Juan López', nee: 'TDAH', lastUpdated: '2025-04-12' },
-    { id: 4, name: 'Sofia Martínez', nee: 'Altas Capacidades', lastUpdated: '2025-04-10' },
+    { id: 1, name: 'Pablo Rodríguez', nee: 'Dislexia', nivel: '3° Básico', lastUpdated: '2025-04-15' },
+    { id: 2, name: 'María García', nee: 'Discalculia', nivel: '5° Básico', lastUpdated: '2025-04-14' },
+    { id: 3, name: 'Juan López', nee: 'TDAH', nivel: '4° Básico', lastUpdated: '2025-04-12' },
+    { id: 4, name: 'Sofia Martínez', nee: 'Altas Capacidades', nivel: '6° Básico', lastUpdated: '2025-04-10' },
   ]);
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -97,20 +99,31 @@ const PACIPage = () => {
             <>
               {/* Student Info Display */}
               <Card variant="flat">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-600 uppercase font-semibold">Nombre</p>
-                    <p className="text-lg font-semibold text-gray-900">{selectedStudent.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600 uppercase font-semibold">NEE</p>
-                    <Badge variant="info">{selectedStudent.nee}</Badge>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600 uppercase font-semibold">Actualizado</p>
-                    <p className="text-sm text-gray-900">{selectedStudent.lastUpdated}</p>
-                  </div>
-                </div>
+                {(() => {
+                  const anonData = anonymizeName(selectedStudent.name, selectedStudent.nivel);
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-600 uppercase font-semibold">Estudiante</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Avatar name={selectedStudent.name} size="sm" />
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">{anonData.display}</p>
+                            <p className="text-xs text-gray-500">{anonData.nivel}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 uppercase font-semibold">NEE</p>
+                        <Badge variant="info" className="mt-2">{selectedStudent.nee}</Badge>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 uppercase font-semibold">Actualizado</p>
+                        <p className="text-sm text-gray-900 mt-2">{selectedStudent.lastUpdated}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
               </Card>
 
               {/* Diagnóstico */}

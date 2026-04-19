@@ -1,10 +1,12 @@
 /**
  * StudentSelector Component
  * Componente para seleccionar un estudiante del formulario PACI
+ * Protege datos sensibles: muestra iniciales + nivel
  */
 
 import React, { useState, useEffect } from 'react';
-import { Input, Button, Card, Spinner } from '../ui';
+import { Input, Card, Spinner, Avatar } from '../ui';
+import { anonymizeName } from '../../utils/privacyUtils';
 
 const StudentSelector = ({
   selectedStudent,
@@ -26,11 +28,16 @@ const StudentSelector = ({
       {selectedStudent ? (
         <Card variant="outlined">
           <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-semibold text-gray-900">{selectedStudent.name}</h4>
-              <p className="text-sm text-gray-600 mt-1">
-                NEE: <span className="font-medium">{selectedStudent.nee}</span>
-              </p>
+            <div className="flex items-center gap-3">
+              <Avatar name={selectedStudent.name} size="md" />
+              <div>
+                <p className="font-semibold text-gray-900">
+                  {anonymizeName(selectedStudent.name, selectedStudent.nivel).display}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  NEE: <span className="font-medium">{selectedStudent.nee}</span>
+                </p>
+              </div>
             </div>
             <button
               onClick={() => {
@@ -69,22 +76,28 @@ const StudentSelector = ({
                   <Spinner size="sm" />
                 </div>
               ) : filteredStudents.length > 0 ? (
-                filteredStudents.map((student) => (
-                  <button
-                    key={student.id}
-                    onClick={() => {
-                      onSelectStudent(student);
-                      setIsOpen(false);
-                      setSearchTerm('');
-                    }}
-                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
-                  >
-                    <p className="font-medium text-gray-900">{student.name}</p>
-                    <p className="text-xs text-gray-600 mt-1">
-                      NEE: {student.nee} • Actualizado: {student.lastUpdated}
-                    </p>
-                  </button>
-                ))
+                filteredStudents.map((student) => {
+                  const anonData = anonymizeName(student.name, student.nivel);
+                  return (
+                    <button
+                      key={student.id}
+                      onClick={() => {
+                        onSelectStudent(student);
+                        setIsOpen(false);
+                        setSearchTerm('');
+                      }}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 flex items-center gap-3"
+                    >
+                      <Avatar name={student.name} size="sm" />
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{anonData.display}</p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          {anonData.nivel} • NEE: {student.nee}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })
               ) : searchTerm.length > 0 ? (
                 <div className="p-4 text-center text-gray-500">
                   No se encontraron estudiantes

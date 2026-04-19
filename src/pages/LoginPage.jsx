@@ -120,6 +120,17 @@ const LoginPage = () => {
               <p className="font-body text-on-surface-variant">Ingresa tus credenciales para acceder a tu escritorio.</p>
             </div>
 
+            {/* Dev Info Alert */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-blue-700 font-semibold mb-1">💡 Modo Desarrollo</p>
+                <p className="text-xs text-blue-600">
+                  Usa <code className="bg-blue-100 px-1 rounded">docente@prisma.cl</code> / <code className="bg-blue-100 px-1 rounded">demo123</code>
+                  <br/>o cualquier email con contraseña de 6+ caracteres
+                </p>
+              </div>
+            )}
+
             {/* Error Alert */}
             {apiError && (
               <Alert variant="error" className="mb-6">

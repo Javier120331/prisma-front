@@ -2,13 +2,15 @@
  * Dashboard Page
  * Página principal de docente autenticado
  * Muestra estadísticas, estudiantes recientes y acciones rápidas
+ * Protege datos sensibles de menores: muestra iniciales + nivel
  */
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import MainContainer from '../components/layout/MainContainer';
-import { Card, Badge, Button, Alert, Spinner } from '../components/ui';
+import { Card, Badge, Button, Alert, Spinner, Avatar } from '../components/ui';
+import { anonymizeName } from '../utils/privacyUtils';
 import dashboardService from '../services/dashboardService';
 
 const DashboardPage = () => {
@@ -37,9 +39,9 @@ const DashboardPage = () => {
         };
 
         const mockStudents = [
-          { id: 1, name: 'Pablo Rodríguez', nee: 'Dislexia', lastUpdated: '2025-04-15' },
-          { id: 2, name: 'María García', nee: 'Discalculia', lastUpdated: '2025-04-14' },
-          { id: 3, name: 'Juan López', nee: 'TDAH', lastUpdated: '2025-04-12' },
+          { id: 1, name: 'Pablo Rodríguez', nee: 'Dislexia', nivel: '3° Básico', lastUpdated: '2025-04-15' },
+          { id: 2, name: 'María García', nee: 'Discalculia', nivel: '5° Básico', lastUpdated: '2025-04-14' },
+          { id: 3, name: 'Juan López', nee: 'TDAH', nivel: '4° Básico', lastUpdated: '2025-04-12' },
         ];
 
         const mockMaterials = [
@@ -170,7 +172,7 @@ const DashboardPage = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Nombre</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Estudiante</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">NEE</th>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Última actualización</th>
                     <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600">Acción</th>
@@ -178,20 +180,31 @@ const DashboardPage = () => {
                 </thead>
                 <tbody>
                   {students.length > 0 ? (
-                    students.map((student) => (
-                      <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <td className="py-3 px-4 font-semibold text-gray-900">{student.name}</td>
-                        <td className="py-3 px-4">
-                          <Badge variant="info">{student.nee}</Badge>
-                        </td>
-                        <td className="py-3 px-4 text-sm text-gray-600">{student.lastUpdated}</td>
-                        <td className="py-3 px-4 text-right">
-                          <button className="text-primary-600 hover:text-primary-700 font-semibold text-sm transition-colors">
-                            Ver →
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    students.map((student) => {
+                      const anonData = anonymizeName(student.name, student.nivel);
+                      return (
+                        <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar name={student.name} size="sm" />
+                              <div>
+                                <p className="font-semibold text-gray-900">{anonData.display}</p>
+                                <p className="text-xs text-gray-500">{anonData.nivel}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge variant="info">{student.nee}</Badge>
+                          </td>
+                          <td className="py-3 px-4 text-sm text-gray-600">{student.lastUpdated}</td>
+                          <td className="py-3 px-4 text-right">
+                            <button className="text-primary-600 hover:text-primary-700 font-semibold text-sm transition-colors">
+                              Ver →
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
                       <td colSpan="4" className="py-8 text-center text-gray-500">
