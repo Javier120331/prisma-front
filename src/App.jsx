@@ -13,6 +13,8 @@ import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import PACIPage from './pages/PACIPage';
 import AjustadorPage from './pages/AjustadorPage';
+import NuevaSesionPage from './pages/NuevaSesionPage';
+import SesionPage from './pages/SesionPage';
 
 /**
  * ProtectedRoute
@@ -79,6 +81,22 @@ const AppContent = () => {
         element={
           <ProtectedRoute>
             <AjustadorPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/nueva-sesion"
+        element={
+          <ProtectedRoute>
+            <NuevaSesionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sesion/:sessionId"
+        element={
+          <ProtectedRoute>
+            <SesionPage />
           </ProtectedRoute>
         }
       />
