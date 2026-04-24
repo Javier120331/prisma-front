@@ -4,6 +4,7 @@
  */
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001';
+const DOCS_API_URL = process.env.REACT_APP_DOCS_API_URL || 'http://localhost:3000';
 const CHAT_API_URL = process.env.REACT_APP_CHAT_API_URL || 'http://localhost:8000';
 
 export const AUTH_ENDPOINTS = {
@@ -22,7 +23,15 @@ export const CHAT_ENDPOINTS = {
   HEALTH: `${CHAT_API_URL}/health`,
 };
 
+export const JOBS_ENDPOINTS = {
+  UPLOAD: `${DOCS_API_URL}/api/jobs/upload`,
+  LIST: `${DOCS_API_URL}/api/jobs`,
+  STATUS: (id) => `${DOCS_API_URL}/api/jobs/${id}`,
+  DOWNLOAD: (id) => `${DOCS_API_URL}/api/jobs/${id}/download`,
+};
+
 export const API_URLS = {
   AUTH: AUTH_ENDPOINTS,
   CHAT: CHAT_ENDPOINTS,
+  JOBS: JOBS_ENDPOINTS,
 };

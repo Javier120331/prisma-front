@@ -14,6 +14,7 @@ const SideNav = () => {
   const [isOpen, setIsOpen] = useState(true);
 
   const navItems = [
+    { path: '/nueva-sesion', label: 'Nueva Sesión', icon: 'add_circle' },
     { path: '/dashboard', label: 'Escritorio', icon: 'dashboard' },
     { path: '/paci', label: 'Alumnos', icon: 'group' },
     { path: '/ajustador', label: 'Ajustador IA', icon: 'psychology' },
