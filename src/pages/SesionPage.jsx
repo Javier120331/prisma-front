@@ -152,10 +152,12 @@ const HitlCard = ({ hitlData, onRespond }) => {
 // ── Phase config ─────────────────────────────────────────────────────────────
 
 const PHASE_CONFIG = {
-  running:       { label: 'Procesando',         badge: 'text-lime-700 bg-lime-100 dark:text-lime-400 dark:bg-lime-950/40',   icon: 'autorenew' },
-  awaiting_hitl: { label: 'Esperando revisión', badge: 'text-amber-700 bg-amber-100 dark:text-amber-400 dark:bg-amber-950/40', icon: 'pending_actions' },
-  completed:     { label: 'Completado',          badge: 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-950/40', icon: 'check_circle' },
-  error:         { label: 'Error',               badge: 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-950/40',    icon: 'error' },
+  running:            { label: 'Procesando',               badge: 'text-lime-700 bg-lime-100 dark:text-lime-400 dark:bg-lime-950/40',    icon: 'autorenew' },
+  awaiting_hitl:      { label: 'Esperando revisión',       badge: 'text-amber-700 bg-amber-100 dark:text-amber-400 dark:bg-amber-950/40', icon: 'pending_actions' },
+  completed:          { label: 'Completado',               badge: 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-950/40', icon: 'check_circle' },
+  completed_degraded: { label: 'Completado con advertencia', badge: 'text-amber-700 bg-amber-100 dark:text-amber-400 dark:bg-amber-950/40', icon: 'warning' },
+  error_hitl_rejected:{ label: 'Cancelado',                badge: 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-950/40',    icon: 'cancel' },
+  error:              { label: 'Error',                    badge: 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-950/40',        icon: 'error' },
 };
 
 // ── SesionPage ───────────────────────────────────────────────────────────────
@@ -165,6 +167,7 @@ const SesionPage = () => {
   const navigate = useNavigate();
 
   const [phase, setPhase] = useState('running');
+  const [workflowStatus, setWorkflowStatus] = useState(null);
   const [messages, setMessages] = useState([]);
   const [hitlData, setHitlData] = useState(null);
   const [error, setError] = useState(null);
@@ -179,6 +182,7 @@ const SesionPage = () => {
         setMessages(data.messages || []);
         if (data.hitl_data) setHitlData(data.hitl_data);
         if (data.error) setError(data.error);
+        setWorkflowStatus(data.workflow_status || null);
         setPhase(data.phase);
       } catch (err) {
         setError(err.message);
@@ -204,7 +208,11 @@ const SesionPage = () => {
     setPhase('running');
   };
 
-  const phaseConf = PHASE_CONFIG[phase] || PHASE_CONFIG.running;
+  const phaseKey =
+    phase === 'completed' && workflowStatus === 'degraded' ? 'completed_degraded' :
+    phase === 'error'     && workflowStatus === 'hitl_rejected' ? 'error_hitl_rejected' :
+    phase;
+  const phaseConf = PHASE_CONFIG[phaseKey] || PHASE_CONFIG.running;
 
   return (
     <MainContainer title="Sesión en curso">
@@ -258,11 +266,11 @@ const SesionPage = () => {
               </div>
             )}
 
-            {phase === 'completed' && (
+            {phase === 'completed' && workflowStatus === 'success' && (
               <div className="flex flex-col items-center gap-3 py-8">
                 <span className="material-symbols-outlined text-5xl text-lime-500">check_circle</span>
-                <p className="text-stone-600 dark:text-stone-400 text-sm text-center">
-                  El documento ha sido generado exitosamente.
+                <p className="text-green-700 dark:text-green-400 text-sm text-center font-medium">
+                  Rúbrica generada y validada por el evaluador interno.
                 </p>
                 <a
                   href={CHAT_ENDPOINTS.DOWNLOAD(sessionId)}
@@ -275,10 +283,59 @@ const SesionPage = () => {
               </div>
             )}
 
-            {phase === 'error' && (
-              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 text-sm text-red-700 dark:text-red-400 mt-2 flex items-start gap-2">
-                <span className="material-symbols-outlined text-base flex-shrink-0">error</span>
-                <span>{error || 'Ocurrió un error durante el procesamiento.'}</span>
+            {phase === 'completed' && workflowStatus === 'degraded' && (
+              <div className="flex flex-col items-center gap-3 py-8">
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 text-sm text-amber-800 dark:text-amber-300 w-full flex items-start gap-2">
+                  <span className="material-symbols-outlined text-base flex-shrink-0">warning</span>
+                  <span>
+                    La rúbrica fue generada como mejor esfuerzo pero no superó todos los criterios
+                    de calidad del evaluador.{' '}
+                    <strong>Revise el documento antes de usarlo.</strong>
+                  </span>
+                </div>
+                <a
+                  href={CHAT_ENDPOINTS.DOWNLOAD(sessionId)}
+                  download
+                  className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold px-8 py-3 rounded-2xl transition-colors text-sm shadow-sm mt-1"
+                >
+                  <span className="material-symbols-outlined text-base">download</span>
+                  Descargar PACI Adaptado (.docx)
+                </a>
+              </div>
+            )}
+
+            {phase === 'error' && workflowStatus === 'hitl_rejected' && (
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-4 text-sm text-blue-800 dark:text-blue-300 mt-2">
+                <p className="font-semibold mb-1 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-base">cancel</span>
+                  Proceso cancelado
+                </p>
+                <p>
+                  El análisis inicial no obtuvo aprobación del docente luego de 3 intentos.
+                  Puede iniciar un nuevo proceso con los documentos corregidos.
+                </p>
+                <button
+                  onClick={() => navigate('/nueva-sesion')}
+                  className="mt-3 text-xs font-semibold text-blue-700 dark:text-blue-400 underline hover:text-blue-900 dark:hover:text-blue-200"
+                >
+                  Iniciar nuevo proceso
+                </button>
+              </div>
+            )}
+
+            {phase === 'error' && workflowStatus !== 'hitl_rejected' && (
+              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 text-sm text-red-700 dark:text-red-400 mt-2">
+                <p className="font-semibold mb-1 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-base">error</span>
+                  Error durante el procesamiento
+                </p>
+                <p>{error || 'Ocurrió un error inesperado. Intente nuevamente.'}</p>
+                <button
+                  onClick={() => navigate('/nueva-sesion')}
+                  className="mt-3 text-xs font-semibold text-red-700 dark:text-red-400 underline hover:text-red-900 dark:hover:text-red-200"
+                >
+                  Iniciar nuevo proceso
+                </button>
               </div>
             )}
 
