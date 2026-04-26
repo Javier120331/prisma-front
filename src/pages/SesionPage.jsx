@@ -311,11 +311,11 @@ const SesionPage = () => {
                   Proceso cancelado
                 </p>
                 <p>
-                  El análisis inicial no obtuvo aprobación del docente luego de 6 intentos.
+                  El análisis inicial no obtuvo aprobación del docente luego de 3 intentos.
                   Puede iniciar un nuevo proceso con los documentos corregidos.
                 </p>
                 <button
-                  onClick={() => window.location.reload()}
+                  onClick={() => navigate('/nueva-sesion')}
                   className="mt-3 text-xs font-semibold text-blue-700 dark:text-blue-400 underline hover:text-blue-900 dark:hover:text-blue-200"
                 >
                   Iniciar nuevo proceso
@@ -331,7 +331,7 @@ const SesionPage = () => {
                 </p>
                 <p>{error || 'Ocurrió un error inesperado. Intente nuevamente.'}</p>
                 <button
-                  onClick={() => window.location.reload()}
+                  onClick={() => navigate('/nueva-sesion')}
                   className="mt-3 text-xs font-semibold text-red-700 dark:text-red-400 underline hover:text-red-900 dark:hover:text-red-200"
                 >
                   Iniciar nuevo proceso
