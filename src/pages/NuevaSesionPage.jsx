@@ -99,7 +99,7 @@ const NuevaSesionPage = () => {
   const canAdvance = () => {
     if (step === 1) return !!paciFile;
     if (step === 2) return !!planningFile;
-    if (step === 3) return true;
+    if (step === 3) return prompt.trim() === '' || prompt.trim().length >= 5;
     return false;
   };
 
@@ -180,9 +180,16 @@ const NuevaSesionPage = () => {
                 placeholder="Ej: Genera un PACI adaptado para un alumno de 3° básico con TEA grado 2, enfocado en matemáticas y lenguaje. Considera que el alumno tiene dificultades en comprensión lectora..."
                 className="w-full h-44 p-4 rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 resize-none focus:outline-none focus:ring-2 focus:ring-lime-400 text-sm transition-all"
               />
-              <p className={`text-xs text-right ${prompt.length >= PROMPT_MAX ? 'text-red-400' : 'text-stone-400'}`}>
-                {prompt.length} / {PROMPT_MAX} caracteres
-              </p>
+              <div className="flex items-center justify-between">
+                {prompt.trim().length > 0 && prompt.trim().length < 5 ? (
+                  <p className="text-xs text-red-400">Mínimo 5 caracteres</p>
+                ) : (
+                  <span />
+                )}
+                <p className={`text-xs text-right ${prompt.length >= PROMPT_MAX ? 'text-red-400' : 'text-stone-400'}`}>
+                  {prompt.length} / {PROMPT_MAX} caracteres
+                </p>
+              </div>
               {error && (
                 <Alert variant="error">{error}</Alert>
               )}
