@@ -225,12 +225,45 @@ const SesionPage = () => {
   // ── Conectar a SSE ────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
-    let reconnectTimeout = null;
 
+    // Sync de estado puntual — se usa en hidratación y como fallback si el stream cierra
+    const syncState = async () => {
+      try {
+        const state = await chatService.getSessionState(sessionId);
+        if (cancelled) return;
+        setMessages(state.messages || []);
+        if (state.hitl_data) setHitlData(state.hitl_data);
+        if (state.error) setError(state.error);
+        setWorkflowStatus(state.workflow_status || null);
+        setPhase(state.phase);
+      } catch (err) {
+        if (cancelled) return;
+        setError(err.message);
+        setPhase('error');
+      }
+    };
+
+    const connectToSSE = () => {
+      if (cancelled) return;
+      const source = new EventSource(CHAT_ENDPOINTS.STREAM(sessionId));
+      eventSourceRef.current = source;
+
+      source.onmessage = handleSSEEvent;
+
+      source.onerror = () => {
+        // El stream cerró inesperadamente — sincronizar estado una vez, sin reconectar
+        // El backend cierra limpiamente en eventos terminales; si cerró por error de red,
+        // el GET /state devuelve el estado actual y el usuario puede refrescar si necesita.
+        source.close();
+        eventSourceRef.current = null;
+        if (!cancelled) syncState();
+      };
+    };
+
+    // Hidratación inicial: leer estado actual, luego conectar SSE si no está terminado
     const hydrate = async () => {
       try {
         const state = await chatService.getSessionState(sessionId);
-        // Ignorar si el componente se desmontó durante el await
         if (cancelled) return;
 
         setMessages(state.messages || []);
@@ -239,6 +272,7 @@ const SesionPage = () => {
         setWorkflowStatus(state.workflow_status || null);
         setPhase(state.phase);
 
+        // No conectar SSE si la sesión ya terminó
         if (state.phase === 'completed' || state.phase === 'error') return;
 
         connectToSSE();
@@ -249,29 +283,10 @@ const SesionPage = () => {
       }
     };
 
-    const connectToSSE = () => {
-      if (cancelled) return;
-      const url = CHAT_ENDPOINTS.STREAM(sessionId);
-      const source = new EventSource(url);
-      eventSourceRef.current = source;
-
-      source.onmessage = handleSSEEvent;
-
-      source.onerror = () => {
-        source.close();
-        eventSourceRef.current = null;
-        // Reconectar siempre que el componente siga montado
-        if (!cancelled) {
-          reconnectTimeout = setTimeout(() => hydrate(), 1000);
-        }
-      };
-    };
-
     hydrate();
 
     return () => {
       cancelled = true;
-      clearTimeout(reconnectTimeout);
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
