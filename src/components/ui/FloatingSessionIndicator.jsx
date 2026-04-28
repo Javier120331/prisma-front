@@ -31,7 +31,7 @@ const FloatingSessionIndicator = () => {
       >
         {config.icon}
       </span>
-      <span className="absolute right-16 bottom-1/2 translate-y-1/2 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 shadow-md">
+      <span className="absolute right-16 bottom-1/2 translate-y-1/2 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-medium px-3 py-1.5 rounded-lg shadow-md max-w-48 truncate">
         {config.tooltip}
       </span>
     </button>
