@@ -177,14 +177,18 @@ const SesionPage = () => {
 
   // ── Manejador de eventos SSE ──────────────────────────────────────────────
   const handleSSEEvent = useCallback((event) => {
-    const data = JSON.parse(event.data);
+    // Guard: el servidor puede enviar pings vacíos o payloads malformados
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch {
+      return;
+    }
 
-    // Ignorar keepalives
     if (data.type === 'ping') return;
 
     switch (data.type) {
       case 'agent_start':
-        // Mostrar qué agente está corriendo
         setCurrentStep(data.message);
         break;
 
@@ -193,25 +197,21 @@ const SesionPage = () => {
         break;
 
       case 'message':
-        // Agregar al historial de chat
         setMessages(prev => [...prev, { role: data.role, content: data.content }]);
         break;
 
       case 'hitl_required':
-        // El docente debe revisar
         setHitlData(data.hitl_data);
         setPhase('awaiting_hitl');
         break;
 
       case 'completed':
-        // Flujo completado
         setPhase('completed');
         setWorkflowStatus(data.workflow_status);
         setCurrentStep('');
         break;
 
       case 'error':
-        // Error terminal
         setPhase('error');
         setError(data.message);
         setCurrentStep('');
@@ -224,30 +224,33 @@ const SesionPage = () => {
 
   // ── Conectar a SSE ────────────────────────────────────────────────────────
   useEffect(() => {
-    // Cargar estado inicial (para hidratación en refresh)
+    let cancelled = false;
+    let reconnectTimeout = null;
+
     const hydrate = async () => {
       try {
         const state = await chatService.getSessionState(sessionId);
+        // Ignorar si el componente se desmontó durante el await
+        if (cancelled) return;
+
         setMessages(state.messages || []);
         if (state.hitl_data) setHitlData(state.hitl_data);
         if (state.error) setError(state.error);
         setWorkflowStatus(state.workflow_status || null);
         setPhase(state.phase);
 
-        // Si ya está terminado, no conectar SSE
-        if (state.phase === 'completed' || state.phase === 'error') {
-          return;
-        }
+        if (state.phase === 'completed' || state.phase === 'error') return;
 
-        // Conectar a SSE si está en curso o esperando HITL
         connectToSSE();
       } catch (err) {
+        if (cancelled) return;
         setError(err.message);
         setPhase('error');
       }
     };
 
     const connectToSSE = () => {
+      if (cancelled) return;
       const url = CHAT_ENDPOINTS.STREAM(sessionId);
       const source = new EventSource(url);
       eventSourceRef.current = source;
@@ -256,10 +259,10 @@ const SesionPage = () => {
 
       source.onerror = () => {
         source.close();
-        // Si el stream cerró inesperadamente, sincronizar estado
-        // Verificar el estado actual antes de reconectar
-        if (eventSourceRef.current?.readyState !== 2) {
-          setTimeout(() => hydrate(), 1000);
+        eventSourceRef.current = null;
+        // Reconectar siempre que el componente siga montado
+        if (!cancelled) {
+          reconnectTimeout = setTimeout(() => hydrate(), 1000);
         }
       };
     };
@@ -267,8 +270,11 @@ const SesionPage = () => {
     hydrate();
 
     return () => {
+      cancelled = true;
+      clearTimeout(reconnectTimeout);
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
+        eventSourceRef.current = null;
       }
     };
   }, [sessionId, handleSSEEvent]);
