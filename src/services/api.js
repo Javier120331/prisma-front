@@ -8,7 +8,7 @@ import storageUtils from '../utils/localStorage';
 import { handleAuthFailure } from './authSession';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001',
   headers: {
     'Content-Type': 'application/json',
   },

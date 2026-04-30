@@ -6,9 +6,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { ActiveSessionProvider } from './context/ActiveSessionContext';
-import FloatingSessionIndicator from './components/ui/FloatingSessionIndicator';
-import SessionToast from './components/ui/SessionToast';
 
 // Páginas
 import LoginPage from './pages/LoginPage';
@@ -16,8 +13,6 @@ import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import PACIPage from './pages/PACIPage';
 import AjustadorPage from './pages/AjustadorPage';
-import NuevaSesionPage from './pages/NuevaSesionPage';
-import SesionPage from './pages/SesionPage';
 
 /**
  * ProtectedRoute
@@ -87,28 +82,12 @@ const AppContent = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/nueva-sesion"
-        element={
-          <ProtectedRoute>
-            <NuevaSesionPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/sesion/:sessionId"
-        element={
-          <ProtectedRoute>
-            <SesionPage />
-          </ProtectedRoute>
-        }
-      />
 
-      {/* Ruta por defecto - lleva al login; ProtectedRoute decide si entra al dashboard */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      {/* Ruta por defecto - redirige a dashboard o login */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
       {/* 404 */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 };
@@ -121,11 +100,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ActiveSessionProvider>
-          <AppContent />
-          <FloatingSessionIndicator />
-          <SessionToast />
-        </ActiveSessionProvider>
+        <AppContent />
       </AuthProvider>
     </BrowserRouter>
   );
