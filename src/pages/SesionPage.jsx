@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import MainContainer from '../components/layout/MainContainer';
 import chatService from '../services/chatService';
 import { CHAT_ENDPOINTS } from '../constants/api';
+import storageUtils from '../utils/localStorage';
 
 // ── MessageBubble ────────────────────────────────────────────────────────────
 
@@ -248,7 +249,9 @@ const SesionPage = () => {
     };
 
     const connectToSSE = () => {
-      const url = CHAT_ENDPOINTS.STREAM(sessionId);
+      const token = storageUtils.getToken();
+      const base = CHAT_ENDPOINTS.STREAM(sessionId);
+      const url = token ? `${base}?token=${encodeURIComponent(token)}` : base;
       const source = new EventSource(url);
       eventSourceRef.current = source;
 
