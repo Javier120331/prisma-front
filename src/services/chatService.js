@@ -9,7 +9,7 @@ import storageUtils from '../utils/localStorage';
 import { handleAuthFailure } from './authSession';
 
 const chatApi = axios.create({
-  baseURL: process.env.REACT_APP_CHAT_API_URL || 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_CHAT_API_URL || 'http://localhost:8000',
 });
 
 // Inyectar el JWT de Supabase en cada request al backend de agentes
