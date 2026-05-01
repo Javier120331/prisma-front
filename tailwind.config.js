@@ -3,6 +3,7 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,jsx,ts,tsx}",
+    "./node_modules/@luridlf/prisma-ui-lib/dist/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
     extend: {
