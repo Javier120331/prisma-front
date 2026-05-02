@@ -5,13 +5,35 @@
 
 import axios from 'axios';
 import { CHAT_ENDPOINTS } from '../constants/api';
+import storageUtils from '../utils/localStorage';
+import { handleAuthFailure } from './authSession';
 
 const chatApi = axios.create({
-  baseURL: process.env.REACT_APP_CHAT_API_URL || 'http://localhost:8000',
-  headers: {
-    'Content-Type': 'multipart/form-data',
-  },
+  baseURL: import.meta.env.VITE_CHAT_API_URL ?? '',
 });
+
+// Inyectar el JWT de Supabase en cada request al backend de agentes
+chatApi.interceptors.request.use(
+  (config) => {
+    const token = storageUtils.getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
+
+// Redirigir a login si el token expira
+chatApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      handleAuthFailure(error.response?.data, error.config?.url || '');
+    }
+    return Promise.reject(error);
+  },
+);
 
 const chatService = {
   /**
@@ -25,7 +47,9 @@ const chatService = {
       if (prompt) formData.append('prompt', prompt);
       formData.append('school_id', schoolId);
 
-      const response = await chatApi.post(CHAT_ENDPOINTS.START, formData);
+      const response = await chatApi.post(CHAT_ENDPOINTS.START, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Error al iniciar sesión de chat');
@@ -37,7 +61,7 @@ const chatService = {
    */
   getSessionState: async (sessionId) => {
     try {
-      const response = await axios.get(CHAT_ENDPOINTS.STATE(sessionId));
+      const response = await chatApi.get(CHAT_ENDPOINTS.STATE(sessionId));
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
@@ -52,7 +76,7 @@ const chatService = {
    */
   sendHitlDecision: async (sessionId, approved, reason = null, agentToRetry = null) => {
     try {
-      const response = await axios.post(CHAT_ENDPOINTS.HITL(sessionId), {
+      const response = await chatApi.post(CHAT_ENDPOINTS.HITL(sessionId), {
         approved,
         reason,
         agent_to_retry: agentToRetry,
@@ -72,21 +96,11 @@ const chatService = {
   /**
    * Download Result - Descarga el archivo generado
    */
-  downloadResult: async (sessionId, filename = 'resultado.docx') => {
+  downloadResult: async (sessionId) => {
     try {
-      const response = await axios.get(CHAT_ENDPOINTS.DOWNLOAD(sessionId), {
-        responseType: 'blob',
-      });
-
-      // Crear un blob y descargar
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-
+      const response = await chatApi.get(CHAT_ENDPOINTS.DOWNLOAD(sessionId));
+      const { url } = response.data;
+      window.open(url, '_blank');
       return { success: true };
     } catch (error) {
       if (error.response?.status === 404) {
@@ -101,7 +115,7 @@ const chatService = {
    */
   healthCheck: async () => {
     try {
-      const response = await axios.get(CHAT_ENDPOINTS.HEALTH);
+      const response = await chatApi.get(CHAT_ENDPOINTS.HEALTH);
       return response.data;
     } catch (error) {
       throw new Error('Servidor de chat no disponible');
@@ -110,7 +124,6 @@ const chatService = {
 
   /**
    * Poll Session - Hace polling continuo del estado de la sesión
-   * (útil para actualizaciones en tiempo real)
    */
   pollSession: async (sessionId, interval = 2000, timeout = null) => {
     return new Promise((resolve, reject) => {

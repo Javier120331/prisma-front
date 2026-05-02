@@ -3,9 +3,9 @@
  * Configuración centralizada para todos los endpoints de la aplicación
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001';
-const DOCS_API_URL = process.env.REACT_APP_DOCS_API_URL || 'http://localhost:3000';
-const CHAT_API_URL = process.env.REACT_APP_CHAT_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+const DOCS_API_URL = import.meta.env.VITE_DOCS_API_URL || 'http://localhost:3000';
+const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL ?? '';
 
 export const AUTH_ENDPOINTS = {
   REGISTER: `${API_BASE_URL}/api/auth/register`,
@@ -18,6 +18,7 @@ export const AUTH_ENDPOINTS = {
 export const CHAT_ENDPOINTS = {
   START: `${CHAT_API_URL}/chat/start`,
   STATE: (sessionId) => `${CHAT_API_URL}/chat/${sessionId}/state`,
+  STREAM: (sessionId) => `${CHAT_API_URL}/chat/${sessionId}/stream`,
   HITL: (sessionId) => `${CHAT_API_URL}/chat/${sessionId}/hitl`,
   DOWNLOAD: (sessionId) => `${CHAT_API_URL}/chat/${sessionId}/download`,
   HEALTH: `${CHAT_API_URL}/health`,

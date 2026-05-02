@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MainContainer from '../components/layout/MainContainer';
 import chatService from '../services/chatService';
 import { CHAT_ENDPOINTS } from '../constants/api';
+import storageUtils from '../utils/localStorage';
+import { useActiveSession } from '../context/ActiveSessionContext';
 
 // ── MessageBubble ────────────────────────────────────────────────────────────
 
@@ -165,33 +167,141 @@ const PHASE_CONFIG = {
 const SesionPage = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const { startTracking } = useActiveSession();
 
   const [phase, setPhase] = useState('running');
   const [workflowStatus, setWorkflowStatus] = useState(null);
   const [messages, setMessages] = useState([]);
   const [hitlData, setHitlData] = useState(null);
   const [error, setError] = useState(null);
+  const [currentStep, setCurrentStep] = useState('');
+  const [downloading, setDownloading] = useState(false);
   const bottomRef = useRef(null);
+  const eventSourceRef = useRef(null);
 
+  // ── Manejador de eventos SSE ──────────────────────────────────────────────
+  const handleSSEEvent = useCallback((event) => {
+    // Guard: el servidor puede enviar pings vacíos o payloads malformados
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch {
+      return;
+    }
+
+    if (data.type === 'ping') return;
+
+    switch (data.type) {
+      case 'agent_start':
+        setCurrentStep(data.message);
+        break;
+
+      case 'agent_end':
+        setCurrentStep('');
+        break;
+
+      case 'message':
+        setMessages(prev => [...prev, { role: data.role, content: data.content }]);
+        break;
+
+      case 'hitl_required':
+        setHitlData(data.hitl_data);
+        setPhase('awaiting_hitl');
+        break;
+
+      case 'completed':
+        setPhase('completed');
+        setWorkflowStatus(data.workflow_status);
+        setCurrentStep('');
+        break;
+
+      case 'error':
+        setPhase('error');
+        setError(data.message);
+        setCurrentStep('');
+        break;
+
+      default:
+        console.warn('Evento SSE desconocido:', data.type);
+    }
+  }, []);
+
+  // ── Conectar a SSE ────────────────────────────────────────────────────────
   useEffect(() => {
-    if (phase !== 'running') return;
+    let cancelled = false;
 
-    const interval = setInterval(async () => {
+    // Sync de estado puntual — se usa en hidratación y como fallback si el stream cierra
+    const syncState = async () => {
       try {
-        const data = await chatService.getSessionState(sessionId);
-        setMessages(data.messages || []);
-        if (data.hitl_data) setHitlData(data.hitl_data);
-        if (data.error) setError(data.error);
-        setWorkflowStatus(data.workflow_status || null);
-        setPhase(data.phase);
+        const state = await chatService.getSessionState(sessionId);
+        if (cancelled) return;
+        setMessages(state.messages || []);
+        if (state.hitl_data) setHitlData(state.hitl_data);
+        if (state.error) setError(state.error);
+        setWorkflowStatus(state.workflow_status || null);
+        setPhase(state.phase);
       } catch (err) {
+        if (cancelled) return;
         setError(err.message);
         setPhase('error');
       }
-    }, 2000);
+    };
 
-    return () => clearInterval(interval);
-  }, [phase, sessionId]);
+    const connectToSSE = () => {
+      const token = storageUtils.getToken();
+      const base = CHAT_ENDPOINTS.STREAM(sessionId);
+      const url = token ? `${base}?token=${encodeURIComponent(token)}` : base;
+      const source = new EventSource(url);
+      eventSourceRef.current = source;
+
+      source.onmessage = handleSSEEvent;
+
+      source.onerror = () => {
+        // El stream cerró inesperadamente — sincronizar estado una vez, sin reconectar
+        // El backend cierra limpiamente en eventos terminales; si cerró por error de red,
+        // el GET /state devuelve el estado actual y el usuario puede refrescar si necesita.
+        source.close();
+        eventSourceRef.current = null;
+        if (!cancelled) syncState();
+      };
+    };
+
+    // Hidratación inicial: leer estado actual, luego conectar SSE si no está terminado
+    const hydrate = async () => {
+      try {
+        const state = await chatService.getSessionState(sessionId);
+        if (cancelled) return;
+
+        setMessages(state.messages || []);
+        if (state.hitl_data) setHitlData(state.hitl_data);
+        if (state.error) setError(state.error);
+        setWorkflowStatus(state.workflow_status || null);
+        setPhase(state.phase);
+
+        // No conectar SSE si la sesión ya terminó
+        if (state.phase === 'completed' || state.phase === 'error') return;
+
+        // Registrar en contexto global (soporte para page refresh)
+        startTracking(sessionId);
+
+        connectToSSE();
+      } catch (err) {
+        if (cancelled) return;
+        setError(err.message);
+        setPhase('error');
+      }
+    };
+
+    hydrate();
+
+    return () => {
+      cancelled = true;
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    };
+  }, [sessionId, handleSSEEvent]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -262,7 +372,7 @@ const SesionPage = () => {
             {phase === 'running' && (
               <div className="flex items-center gap-2 text-stone-400 text-sm pt-2 pl-1">
                 <Spinner />
-                <span>El agente está procesando...</span>
+                <span>{currentStep || 'El agente está procesando...'}</span>
               </div>
             )}
 
@@ -272,14 +382,14 @@ const SesionPage = () => {
                 <p className="text-green-700 dark:text-green-400 text-sm text-center font-medium">
                   Rúbrica generada y validada por el evaluador interno.
                 </p>
-                <a
-                  href={CHAT_ENDPOINTS.DOWNLOAD(sessionId)}
-                  download
-                  className="inline-flex items-center gap-2 bg-lime-600 hover:bg-lime-700 text-white font-semibold px-8 py-3 rounded-2xl transition-colors text-sm shadow-sm mt-1"
+                <button
+                  onClick={async () => { setDownloading(true); try { await chatService.downloadResult(sessionId); } finally { setDownloading(false); } }}
+                  disabled={downloading}
+                  className="inline-flex items-center gap-2 bg-lime-600 hover:bg-lime-700 disabled:opacity-50 text-white font-semibold px-8 py-3 rounded-2xl transition-colors text-sm shadow-sm mt-1"
                 >
-                  <span className="material-symbols-outlined text-base">download</span>
+                  {downloading ? <Spinner /> : <span className="material-symbols-outlined text-base">download</span>}
                   Descargar PACI Adaptado (.docx)
-                </a>
+                </button>
               </div>
             )}
 
@@ -293,14 +403,14 @@ const SesionPage = () => {
                     <strong>Revise el documento antes de usarlo.</strong>
                   </span>
                 </div>
-                <a
-                  href={CHAT_ENDPOINTS.DOWNLOAD(sessionId)}
-                  download
-                  className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold px-8 py-3 rounded-2xl transition-colors text-sm shadow-sm mt-1"
+                <button
+                  onClick={async () => { setDownloading(true); try { await chatService.downloadResult(sessionId); } finally { setDownloading(false); } }}
+                  disabled={downloading}
+                  className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white font-semibold px-8 py-3 rounded-2xl transition-colors text-sm shadow-sm mt-1"
                 >
-                  <span className="material-symbols-outlined text-base">download</span>
+                  {downloading ? <Spinner /> : <span className="material-symbols-outlined text-base">download</span>}
                   Descargar PACI Adaptado (.docx)
-                </a>
+                </button>
               </div>
             )}
 
