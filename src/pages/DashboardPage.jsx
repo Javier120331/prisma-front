@@ -96,7 +96,8 @@ const DashboardPage = () => {
         )}
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="flex justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-24 w-full max-w-7xl">
           <Button
             onClick={() => navigate('/paci')}
             className="h-auto p-4"
@@ -104,16 +105,6 @@ const DashboardPage = () => {
             <div className="text-left">
               <div className="text-lg font-semibold">Nuevo PACI</div>
               <div className="text-sm opacity-90">Crear plan de adaptación</div>
-            </div>
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => navigate('/ajustador')}
-            className="h-auto p-4"
-          >
-            <div className="text-left">
-              <div className="text-lg font-semibold">Ajustador IA</div>
-              <div className="text-sm opacity-90">Adaptar contenidos</div>
             </div>
           </Button>
           <Button
@@ -127,6 +118,7 @@ const DashboardPage = () => {
             </div>
           </Button>
         </div>
+      </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

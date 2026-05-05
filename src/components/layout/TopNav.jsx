@@ -3,16 +3,58 @@
  * Navegación superior con notificaciones y perfil
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import authService from '../../services/authService';
 import UserAvatar from '../ui/UserAvatar';
 
+const SERVICE_STATUS_URLS = [
+  { name: 'Auth', url: 'http://localhost:3001/api/health' },
+  { name: 'Docs', url: 'http://localhost:3002/api/health' },
+  { name: 'Perfil Alumno', url: 'http://localhost:3005/health' },
+];
+
 const TopNav = ({ title = 'Aula Orgánica' }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [serviceStatus, setServiceStatus] = useState(
+    SERVICE_STATUS_URLS.reduce((acc, s) => ({ ...acc, [s.name]: 'checking' }), {})
+  );
+  const settingsRef = useRef(null);
+
+  useEffect(() => {
+    const checkServices = async () => {
+      const results = {};
+      await Promise.all(
+        SERVICE_STATUS_URLS.map(async ({ name, url }) => {
+          try {
+            const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
+            results[name] = res.ok ? 'up' : 'down';
+          } catch {
+            results[name] = 'down';
+          }
+        })
+      );
+      setServiceStatus(results);
+    };
+
+    checkServices();
+    const interval = setInterval(checkServices, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target)) {
+        setIsSettingsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -51,9 +93,42 @@ const TopNav = ({ title = 'Aula Orgánica' }) => {
           </button>
 
           {/* Settings Button */}
-          <button className="p-2 text-stone-500 hover:bg-stone-100/50 dark:hover:bg-stone-800/50 rounded-full transition-all duration-300">
-            <span className="material-symbols-outlined">settings</span>
-          </button>
+          <div className="relative" ref={settingsRef}>
+            {/* Settings Button */}
+            <button
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+              className="p-2 text-stone-500 hover:bg-stone-100/50 dark:hover:bg-stone-800/50 rounded-full transition-all duration-300"
+            >
+              <span className="material-symbols-outlined">settings</span>
+            </button>
+
+            {/* Settings Dropdown */}
+            {isSettingsOpen && (
+              <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/15 overflow-hidden z-50">
+                <div className="px-4 py-3 border-b border-outline-variant/15">
+                  <p className="text-sm font-medium text-on-surface">Status</p>
+                </div>
+                <div className="px-4 py-3 space-y-2">
+                  {SERVICE_STATUS_URLS.map(({ name }) => {
+                    const status = serviceStatus[name];
+                    const isUp = status === 'up';
+                    const isDown = status === 'down';
+                    return (
+                      <div key={name} className="flex items-center justify-between">
+                        <span className="text-sm text-on-surface">{name}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-xs font-medium ${isUp ? 'text-success' : isDown ? 'text-error' : 'text-on-surface-variant'}`}>
+                            {status === 'checking' ? 'checking...' : isUp ? 'up' : 'down'}
+                          </span>
+                          <span className={`w-2 h-2 rounded-full ${isUp ? 'bg-success' : isDown ? 'bg-error' : 'bg-warning'}`}></span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Profile Avatar with Dropdown */}
           <div className="relative">
